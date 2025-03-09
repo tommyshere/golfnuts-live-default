@@ -38,6 +38,6 @@ def fetch_round_start_status(tournament_id):
 def send_websocket_message(connection_id, message):
     """Sends a WebSocket message to a specific client via API Gateway."""
     send_response = apig_management_client.post_to_connection(
-        Data=message, ConnectionId=connection_id
+        Data=json.dumps(message).encode('utf-8'), ConnectionId=connection_id
     )
     print(send_response)
