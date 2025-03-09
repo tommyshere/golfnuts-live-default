@@ -2,11 +2,17 @@ import os
 import requests
 import json
 import boto3
+from botocore.awsrequest import AWSRequest
+from botocore.auth import SigV4Auth
 
 dynamodb = boto3.resource("dynamodb")
 tournament_cache = dynamodb.Table("GolfNutsCache")
 connections_table = dynamodb.Table("GolfNutsLiveConnections")
 APIGW_ENDPOINT = os.getenv("APIGW_ENDPOINT")
+
+boto_session = boto3.session.Session()
+credentials = boto_session.get_credentials()
+region = boto_session.region_name
 
 
 def main(event, _):
@@ -37,7 +43,13 @@ def fetch_round_start_status(tournament_id):
 def send_websocket_message(connection_id, message):
     """Sends a WebSocket message to a specific client via API Gateway."""
     url = f"{APIGW_ENDPOINT}/{connection_id}"
-    response = requests.post(url, json=message)
+    request = AWSRequest(method="POST", url=url, data=json.dumps(message))
+
+    SigV4Auth(credentials, "execute-api", region).add_auth(request)
+
+    session = requests.Session()
+    prepared_request = request.prepare()
+    response = session.send(prepared_request)
 
     if response.status_code == 200:
         print(f"Message sent to {connection_id}")
