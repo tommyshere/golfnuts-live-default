@@ -11,33 +11,26 @@ apig_management_client = boto3.client("apigatewaymanagementapi", endpoint_url=AP
 
 
 def main(event, _):
-    connection_id = event["requestContext"]["connectionId"]
     body = json.loads(event.get("body", "{}"))
     action = body.get("action")
-    tournament_id = body.get("tournamentId")
-
-    if not tournament_id:
-        return {"statusCode": 400, "body": json.dumps({"message": "Missing tournamentId"})}
+    data = body.get("data", "")
 
     if action == "get_round_start_status":
-        round_status = fetch_round_start_status(tournament_id)
-        send_websocket_message(connection_id, round_status)
+        broadcast_message(data)
 
     return {"statusCode": 200, "body": json.dumps({"message": "Processed"})}
 
 
-def fetch_round_start_status(tournament_id):
-    """Returns whether a specific tournament round has started"""
-    # Mock data — Replace with actual database query
-    if tournament_id == "123":
-        return {"tournamentId": tournament_id, "roundStarted": True}
-    else:
-        return {"tournamentId": tournament_id, "roundStarted": False}
-
-
-def send_websocket_message(connection_id, message):
+def broadcast_message(message):
     """Sends a WebSocket message to a specific client via API Gateway."""
-    send_response = apig_management_client.post_to_connection(
-        Data=json.dumps(message).encode('utf-8'), ConnectionId=connection_id
-    )
-    print(send_response)
+    # Get all connection IDs from DynamoDB
+    response = dynamodb.scan(TableName="GolfNutsLiveConnections")
+    connection_ids = [item['connectionn_id']['S'] for item in response.get('Items', [])]
+
+    for connection_id in connection_ids:
+        try:
+            apig_management_client.post_to_connection(
+                Data=json.dumps(message).encode('utf-8'), ConnectionId=connection_id
+            )
+        except Exception as e:
+            print(f"Failed to send message to {connection_id}: {e}")
