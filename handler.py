@@ -15,7 +15,7 @@ def main(event, _):
     action = body.get("action")
     data = body.get("data", "")
 
-    if action == "get_round_start_status":
+    if action == "round-start":
         broadcast_message(data)
 
     return {"statusCode": 200, "body": json.dumps({"message": "Processed"})}
