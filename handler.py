@@ -13,10 +13,9 @@ apig_management_client = boto3.client("apigatewaymanagementapi", endpoint_url=AP
 def main(event, _):
     body = json.loads(event.get("body", "{}"))
     action = body.get("action")
-    data = body.get("data", "")
 
     if action == "round-start":
-        broadcast_message(data)
+        broadcast_message(body)
 
     return {"statusCode": 200, "body": json.dumps({"message": "Processed"})}
 
