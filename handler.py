@@ -24,7 +24,7 @@ def broadcast_message(message):
     """Sends a WebSocket message to a specific client via API Gateway."""
     # Get all connection IDs from DynamoDB
     response = dynamodb.scan(TableName="GolfNutsLiveConnections")
-    connection_ids = [item['connectionn_id']['S'] for item in response.get('Items', [])]
+    connection_ids = [item['connection_id']['S'] for item in response.get('Items', [])]
 
     for connection_id in connection_ids:
         try:
